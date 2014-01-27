@@ -3,8 +3,8 @@ TeamCity plugin to upload artifacts to Dropbox
 
 Installation
 -------------------------
-Run `mvn package` from root folder to generate target/dropboxDeployer.zip.
-Copy it to [<TeamCity Data Directory>](http://confluence.jetbrains.com/display/TCD8/TeamCity+Data+Directory)/plugins and restart the server.
+Run `mvn package` from root folder to generate `target/dropboxDeployer.zip`.
+Copy it to [TeamCity Data Directory](http://confluence.jetbrains.com/display/TCD8/TeamCity+Data+Directory)/plugins and restart the server.
 
 License
 -------------------------
