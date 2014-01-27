@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:shemas-jetbrains-com:teamcity-plugin-v1-xml">
+  <info>
+    <name>dropboxDeployer</name>
+    <display-name>Teamcity Dropbox Deployer</display-name>
+    <version>@Version@</version>
+    <description>Agent Runner for copying build artifacts to Dropbox</description>
+    <download-url>http://github.com/artmsh/teamcity-dropbox-deployer</download-url>
+    <email>artm.ua@gmail.com</email>
+    <vendor>
+      <name>Artem Mishchenko</name>
+      <url></url>
+      <logo></logo>
+    </vendor>
+  </info>
+  <deployment use-separate-classloader="true" />
+</teamcity-plugin>
