@@ -94,17 +94,19 @@ public class DropboxBuildProcessAdapter extends BuildProcessAdapter implements C
 
     @Override
     public BuildFinishedStatus call() throws Exception {
-        try {
+        try
+        {
             DbxRequestConfig requestConfig = new DbxRequestConfig(DROPBOX_CLIENT_IDENTIFIER,
                     Locale.getDefault().toString());
             DbxClientV2 dbxClient = new DbxClientV2(requestConfig, accessToken);
 
             buildProcessLogger.message("Starting upload via Dropbox");
             int processedFiles = 0;
-            for (ArtifactsCollection artifact : artifacts) {
-                for (File file : artifact.getFilePathMap().keySet()) {
+            for (ArtifactsCollection artifact : artifacts)
+            {
+                for (File file : artifact.getFilePathMap().keySet())
+                {
                     String destinationDir = "/" + artifact.getFilePathMap().get(file);
-                    FileInputStream inputStream = new FileInputStream(file);
 
                     // todo implement FINISHED_WITH_PROBLEMS case
                     // todo implement progress
@@ -141,8 +143,10 @@ public class DropboxBuildProcessAdapter extends BuildProcessAdapter implements C
 
             return BuildFinishedStatus.FINISHED_SUCCESS;
         }
-        catch (IOException e) {
-            throw new RunBuildException(e);
+        catch (Exception ex)
+        {
+            System.err.println("Error uploading to Dropbox: " + ex.getMessage());
+            throw new RunBuildException(ex);
         }
     }
 }
