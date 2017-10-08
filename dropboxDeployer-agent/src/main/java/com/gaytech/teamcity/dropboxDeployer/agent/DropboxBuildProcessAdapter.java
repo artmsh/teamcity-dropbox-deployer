@@ -1,6 +1,11 @@
 package com.gaytech.teamcity.dropboxDeployer.agent;
 
-import com.dropbox.core.*;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.WriteMode;
+import com.dropbox.core.v2.files.UploadErrorException;
+import com.dropbox.core.DbxException;
 import com.gaytech.teamcity.dropboxDeployer.common.DropboxDeployerParams;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.BuildFinishedStatus;
@@ -14,9 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.*;
+import java.util.Date;
 
 public class DropboxBuildProcessAdapter extends BuildProcessAdapter implements Callable<BuildFinishedStatus> {
     public static final String DROPBOX_CLIENT_IDENTIFIER = "TeamcityDropboxDeployer/1.0";
@@ -87,29 +94,47 @@ public class DropboxBuildProcessAdapter extends BuildProcessAdapter implements C
 
     @Override
     public BuildFinishedStatus call() throws Exception {
-        try {
+        try
+        {
             DbxRequestConfig requestConfig = new DbxRequestConfig(DROPBOX_CLIENT_IDENTIFIER,
                     Locale.getDefault().toString());
-            DbxClient dbxClient = new DbxClient(requestConfig, accessToken);
+            DbxClientV2 dbxClient = new DbxClientV2(requestConfig, accessToken);
 
             buildProcessLogger.message("Starting upload via Dropbox");
             int processedFiles = 0;
-            for (ArtifactsCollection artifact : artifacts) {
-                for (File file : artifact.getFilePathMap().keySet()) {
+            for (ArtifactsCollection artifact : artifacts)
+            {
+                for (File file : artifact.getFilePathMap().keySet())
+                {
                     String destinationDir = "/" + artifact.getFilePathMap().get(file);
-                    FileInputStream inputStream = new FileInputStream(file);
 
                     // todo implement FINISHED_WITH_PROBLEMS case
                     // todo implement progress
-                    try {
-                        DbxEntry.File entry = dbxClient.uploadFile(
-                                destinationDir, DbxWriteMode.force(), file.length(), inputStream);
-                        buildProcessLogger.message("Uploaded [" + file.getAbsolutePath() + "] to [" + destinationDir +
-                                "], metadata: " + entry.toString());
-                    } finally {
-                        inputStream.close();
-                    }
 
+                    try (InputStream in = new FileInputStream(file))
+                    {
+                        FileMetadata metadata = dbxClient
+                            .files()
+                            .uploadBuilder(destinationDir)
+                            .withMode(WriteMode.ADD)
+                            .withClientModified(new Date(file.lastModified()))
+                            .uploadAndFinish(in);
+                    }
+                    catch (UploadErrorException ex)
+                    {
+                        System.err.println("Error uploading to Dropbox: " + ex.getMessage());
+                        throw new RunBuildException(ex);
+                    }
+                    catch (DbxException ex)
+                    {
+                        System.err.println("Error uploading to Dropbox: " + ex.getMessage());
+                        throw new RunBuildException(ex);
+                    }
+                    catch (IOException ex)
+                    {
+                        System.err.println("Error reading from file \"" + file + "\": " + ex.getMessage());
+                        throw new RunBuildException(ex);
+                    }
                     processedFiles++;
                 }
             }
@@ -117,10 +142,11 @@ public class DropboxBuildProcessAdapter extends BuildProcessAdapter implements C
             buildProcessLogger.message("Successfully uploaded " + processedFiles + " files to Dropbox");
 
             return BuildFinishedStatus.FINISHED_SUCCESS;
-        } catch (IOException e) {
-            throw new RunBuildException(e);
-        } catch (DbxException e) {
-            throw new RunBuildException(e);
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Error uploading to Dropbox: " + ex.getMessage());
+            throw new RunBuildException(ex);
         }
     }
 }
